@@ -1,6 +1,6 @@
 {
     "name": "チャペル照明",
-    "short_name": "照明卓",
+    "short_name": "チャペル照明",
     "description": "同志社高校 チャペル照明卓シミュレーター",
     "start_url": "/",
     "display": "standalone",
