@@ -23,10 +23,7 @@ export default function FaderBank({
   lightDefinitions, 
   onFaderChange,
   isTabletMode = false,
-  scrollLeft = 0,
-  onScrollChange,
   bankType = 'A',
-  flashStates = [],
   onFlashChange
 }: FaderBankProps) {
 

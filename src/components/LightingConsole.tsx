@@ -5,6 +5,21 @@ import LightPreview from './LightPreview';
 import FaderBank from './FaderBank';
 import CrossFader from './CrossFader';
 
+// PWA用の型定義
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+declare global {
+  interface Window {
+    deferredPrompt?: BeforeInstallPromptEvent;
+  }
+  interface Navigator {
+    standalone?: boolean;
+  }
+}
+
 const LIGHT_DEFINITIONS = [
     'FS下手', 'FS上手', 'GS下手', 'GS上手', 'エリアA', 'エリアB', 'エリアC', 'エリアD', 'エリアE', 'エリアF', 'エリアG', 'エリアH',
     'アンバー', '青緑', '黄', '青紫', '→アッパー', '青', '緑', '赤', '→ロアー', '青', '緑', '赤',
@@ -20,7 +35,6 @@ export default function LightingConsole() {
   const [isTabletMode, setIsTabletMode] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [showPWAWarning, setShowPWAWarning] = useState(false);
-  const [showDeviceWarning, setShowDeviceWarning] = useState(false);
   const [showOrientationWarning, setShowOrientationWarning] = useState(false);    useEffect(() => {
     // Hydration完了フラグを設定
     setIsHydrated(true);
@@ -28,12 +42,10 @@ export default function LightingConsole() {
     // PWAインストールプロンプトを保存
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      (window as any).deferredPrompt = e;
+      window.deferredPrompt = e as BeforeInstallPromptEvent;
     };
-    
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    
-    const checkDeviceType = () => {
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);    const checkDeviceType = () => {
       const userAgent = navigator.userAgent;
       const isTablet = /iPad|Android|Tablet/.test(userAgent) || 
                       (window.innerWidth >= 768 && window.innerHeight >= 1024);
@@ -43,7 +55,7 @@ export default function LightingConsole() {
     const checkWarnings = () => {
       // PWAチェック
       const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                   (window.navigator as any).standalone === true;
+                   (window.navigator as Navigator).standalone === true;
       setShowPWAWarning(!isPWA);
 
       // デバイスチェック（iPadチェックは削除）
@@ -68,7 +80,7 @@ export default function LightingConsole() {
     return () => {
       window.removeEventListener('resize', checkDeviceType);
       window.removeEventListener('orientationchange', checkDeviceType);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
     };
   }, []);
 
@@ -204,10 +216,11 @@ export default function LightingConsole() {
         
         const handleInstall = () => {
             // PWAインストールプロンプトが利用可能な場合のみ
-            if ('deferredPrompt' in window && (window as any).deferredPrompt) {
-                (window as any).deferredPrompt.prompt();
-                (window as any).deferredPrompt.userChoice.then(() => {
-                    (window as any).deferredPrompt = null;
+            const deferredPrompt = window.deferredPrompt;
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => {
+                    window.deferredPrompt = undefined;
                     onClose();
                 });
             } else {
@@ -263,7 +276,7 @@ export default function LightingConsole() {
                     zIndex: 1
                 }}
             >
-                <LightPreview faderValues={getCombinedFaderValues()} lightDefinitions={LIGHT_DEFINITIONS} />
+                <LightPreview faderValues={getCombinedFaderValues()} />
             </div>
 
             {/* メインエリア（統合A/B系統、クロスフェーダー） */}
@@ -319,10 +332,7 @@ export default function LightingConsole() {
                                         lightDefinitions={LIGHT_DEFINITIONS}
                                         onFaderChange={updateBFader}
                                         isTabletMode={isHydrated ? isTabletMode : false}
-                                        scrollLeft={0}
-                                        onScrollChange={() => { }}
                                         bankType="B"
-                                        flashStates={bFlashStates}
                                         onFlashChange={handleBFlash}
                                     />
                                 </div>
@@ -344,10 +354,7 @@ export default function LightingConsole() {
                                         lightDefinitions={LIGHT_DEFINITIONS}
                                         onFaderChange={updateAFader}
                                         isTabletMode={isHydrated ? isTabletMode : false}
-                                        scrollLeft={0}
-                                        onScrollChange={() => { }}
                                         bankType="A"
-                                        flashStates={aFlashStates}
                                         onFlashChange={handleAFlash}
                                     />
                                 </div>

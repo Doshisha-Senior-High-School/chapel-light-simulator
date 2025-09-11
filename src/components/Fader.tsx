@@ -14,15 +14,13 @@ interface FaderProps {
   bankType?: 'A' | 'B'; // フェーダーバンクの種類
 }
 
-export default function Fader({ index, value, label, onChange, isTabletMode = false, maxLabelLength = 4, onFlash, bankType = 'A' }: FaderProps) {
+export default function Fader({ index, value, label, onChange, isTabletMode = false, onFlash, bankType = 'A' }: FaderProps) {
   const [isFlashing, setIsFlashing] = useState(false);
-  const [originalValue, setOriginalValue] = useState(0); // フラッシュ前の値を保存
 
   // フラッシュ（押している間だけ 100%） Pointer Events で統一
   const handleFlashPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setOriginalValue(value);
     setIsFlashing(true);
     onFlash?.(index, true);
     const release = () => {

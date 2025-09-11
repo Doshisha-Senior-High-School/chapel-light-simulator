@@ -1,17 +1,16 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 
 interface LightPreviewProps {
   faderValues: number[];
-  lightDefinitions: string[];
 }
 
-export default function LightPreview({ faderValues, lightDefinitions }: LightPreviewProps) {
+export default function LightPreview({ faderValues }: LightPreviewProps) {
   const svgRef = useRef<HTMLObjectElement>(null);
 
   // SVGの各要素を制御するマッピング
-  const lightMapping = [
+  const lightMapping = useMemo(() => [
     { index: 0, svgId: 'FS下手' },        // 1番: FS下手
     { index: 1, svgId: 'FS上手' },        // 2番: FS上手
     { index: 2, svgId: 'GS下手' },        // 3番: GS下手
@@ -43,7 +42,7 @@ export default function LightPreview({ faderValues, lightDefinitions }: LightPre
     { index: 28, svgId: 'SS下手' },        // 29番: SS下手
     { index: 29, svgId: 'SS上手' },        // 30番: SS上手
     // 31-36番: 空き
-  ];
+  ], []);
 
   useEffect(() => {
     const updateSVGElements = () => {
@@ -233,7 +232,7 @@ export default function LightPreview({ faderValues, lightDefinitions }: LightPre
               }
             }
           });
-        } catch (error) {
+        } catch {
           setTimeout(checkSVG, 100);
         }
       };
@@ -242,7 +241,7 @@ export default function LightPreview({ faderValues, lightDefinitions }: LightPre
     };
 
     updateSVGElements();
-  }, [faderValues]);
+  }, [faderValues, lightMapping]);
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
