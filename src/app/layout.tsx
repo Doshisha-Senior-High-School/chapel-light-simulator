@@ -39,6 +39,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="照明卓" />
         <meta name="apple-touch-fullscreen" content="yes" />
+        <meta name="apple-itunes-app" content="app-id=6774982326" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/fader.svg" type="image/svg+xml" />
       </head>
