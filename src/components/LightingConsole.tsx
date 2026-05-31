@@ -10,6 +10,15 @@ const LIGHT_DEFINITIONS = [
   'アンバー', '青緑', '黄', '青紫', '→アッパー', '青', '緑', '赤', '→ロアー', '青', '緑', '赤',
   'サス下手', 'サス中央', 'サス上手', '', 'SS下手', 'SS上手', '', 'キャット間接', '1階側面スポ', '2階スポット', '1階座席天井', 'ステージ天井'
 ];
+interface DocumentWithFullscreen extends Document {
+  webkitFullscreenEnabled?: boolean;
+  webkitFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => Promise<void>;
+}
+
+interface HTMLElementWithFullscreen extends HTMLElement {
+  webkitRequestFullscreen?: () => Promise<void>;
+}
 
 export default function LightingConsole() {
   const [aFaderValues, setAFaderValues] = useState<number[]>(new Array(36).fill(0));
@@ -22,6 +31,50 @@ export default function LightingConsole() {
   const [deviceType, setDeviceType] = useState<'smartphone' | 'ipad' | 'allowed'>('allowed');
   const [isLandscape, setIsLandscape] = useState(true);
   const [bypassAppRedirect, setBypassAppRedirect] = useState(false);
+
+  // 全画面表示の状態管理
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreenSupported, setIsFullscreenSupported] = useState(false);
+
+  useEffect(() => {
+    const doc = document as DocumentWithFullscreen;
+    setIsFullscreenSupported(!!(doc.fullscreenEnabled || doc.webkitFullscreenEnabled));
+
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!(doc.fullscreenElement || doc.webkitFullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      const docEl = document.documentElement as HTMLElementWithFullscreen;
+      const doc = document as DocumentWithFullscreen;
+
+      if (!doc.fullscreenElement && !doc.webkitFullscreenElement) {
+        if (docEl.requestFullscreen) {
+          await docEl.requestFullscreen();
+        } else if (docEl.webkitRequestFullscreen) {
+          await docEl.webkitRequestFullscreen();
+        }
+      } else {
+        if (doc.exitFullscreen) {
+          await doc.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+          await doc.webkitExitFullscreen();
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling fullscreen:', err);
+    }
+  };
 
   // モーダル表示状態
   const [showAbout, setShowAbout] = useState(false);
@@ -227,12 +280,22 @@ export default function LightingConsole() {
           同志社高等学校 チャペル舞台照明シミュレーター
         </h1>
 
-        <button
-          onClick={() => setShowAbout(true)}
-          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold rounded transition-colors active:scale-95 cursor-pointer"
-        >
-          アプリについて
-        </button>
+        <div className="flex items-center gap-2">
+          {isFullscreenSupported && (
+            <button
+              onClick={toggleFullscreen}
+              className="px-3 py-1 border border-gray-400 text-gray-700 hover:bg-gray-200 text-[11px] font-semibold rounded transition-colors active:scale-95 cursor-pointer"
+            >
+              {isFullscreen ? '全画面終了' : '全画面表示'}
+            </button>
+          )}
+          <button
+            onClick={() => setShowAbout(true)}
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold rounded transition-colors active:scale-95 cursor-pointer"
+          >
+            アプリについて
+          </button>
+        </div>
       </header>
 
       {/* プレビューエリア (30vh固定) */}
