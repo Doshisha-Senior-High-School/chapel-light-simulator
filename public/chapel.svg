@@ -1,51 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="レイヤー1" data-name="レイヤー 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1200.13035">
   <defs>
+    <filter id="blur-medium" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+    <filter id="blur-large" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="80"/>
+    </filter>
+    <clipPath id="horizontClip">
+      <polygon points="100.40234 456.6867 .62109 .50017 1919.37891 .50017 1819.59766 456.6867"/>
+    </clipPath>
     <style>
-      .cls-1 {
-        fill: #e6803a;
-      }
-
-      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5 {
-        opacity: .3;
-      }
-
-      .cls-6 {
-        opacity: .3;
-      }
-
-      .cls-6, .cls-7 {
-        fill: #e6c43a;
-      }
-
-      .cls-2 {
-        fill: #93278f;
-      }
-
-      .cls-3 {
-        fill: #00a0e9;
-      }
-
-      .cls-8 {
-        fill: #fff;
-        opacity: .3;
-      }
-
-      .cls-9 {
-        fill: #e6ff3a;
-      }
-
-      .cls-10 {
-        opacity: .3;
-      }
-
-      .cls-5 {
-        fill: #ff0;
-      }
-
-      .cls-11 {
-        fill: #6b6b6b;
-      }
+      .cls-1 { fill: #e6803a; filter: url(#blur-large); }
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5 { opacity: .3; }
+      .cls-6 { opacity: .3; filter: url(#blur-medium); }
+      .cls-6, .cls-7 { fill: #e6c43a; }
+      .cls-7 { filter: url(#blur-medium); }
+      .cls-2 { fill: #93278f; filter: url(#blur-large); }
+      .cls-3 { fill: #00a0e9; filter: url(#blur-large); }
+      .cls-8 { fill: #fff; opacity: .3; filter: url(#blur-medium); }
+      .cls-9 { fill: #e6ff3a; filter: url(#blur-medium); }
+      .cls-10 { opacity: .3; }
+      .cls-5 { fill: #ff0; filter: url(#blur-large); }
+      .cls-11 { fill: #6b6b6b; }
     </style>
   </defs>
   <g id="背景" data-name="背景">
@@ -60,49 +37,27 @@
     <polygon class="cls-11" points=".57178 1199.63006 100.43701 457.6867 1819.5625 457.6867 1919.42871 1199.63006 .57178 1199.63006"/>
     <path d="M1819.12585,458.18662l99.73071,740.9438H1.14362L100.87442,458.18662h1718.25143M1820.00012,457.18662H100.00012L.00012,1200.13042h1920l-100-742.9438h0Z"/>
   </g>
-  <path id="FS下手" class="cls-8" d="M1975.47282,1523.22861C1732.76096,735.99749,899.3442,295.37943,112.11308,538.0913L-55.4725,3109.88933l2030.94532-1586.66072Z"/>
-  <path id="GS下手" class="cls-8" d="M1975.47282,1153.24475C1732.76096,366.01363,899.3442-74.60442,112.11308,168.10744L-55.4725,2739.90547l2030.94532-1586.66072Z"/>
-  <path id="FS上手" class="cls-8" d="M-42.39351,1523.22861C200.31835,735.99749,1033.73511,295.37943,1820.96623,538.0913l167.58558,2571.79803L-42.39351,1523.22861Z"/>
-  <path id="GS上手" class="cls-8" d="M-42.39351,1153.24475C200.31835,366.01363,1033.73511-74.60442,1820.96623,168.10744l167.58558,2571.79803L-42.39351,1153.24475Z"/>
-  <g id="サス下手" data-name="サス下手" class="cls-10">
-    <circle class="cls-7" cx="365.89964" cy="1070.62406" r="100.30565"/>
-  </g>
-  <g id="サス中央" data-name="サス中央" class="cls-10">
-    <circle class="cls-7" cx="960" cy="1070.62406" r="100.30565"/>
-  </g>
-  <g id="サス上手" data-name="サス上手" class="cls-10">
-    <circle class="cls-7" cx="1554.10036" cy="1070.62406" r="100.30565"/>
-  </g>
-  <g id="A" class="cls-4">
-    <circle class="cls-9" cx="388.163" cy="923.25424" r="234.50119"/>
-  </g>
-  <g id="B" class="cls-4">
-    <circle class="cls-9" cx="738.57796" cy="923.25424" r="234.50119"/>
-  </g>
-  <g id="C" class="cls-4">
-    <circle class="cls-9" cx="1132.35209" cy="923.25424" r="234.50119"/>
-  </g>
-  <g id="D" class="cls-4">
-    <circle class="cls-9" cx="1526.12622" cy="923.25424" r="234.50119"/>
-  </g>
-  <g id="E" class="cls-4">
-    <circle class="cls-9" cx="393.87378" cy="755.35723" r="234.50119"/>
-  </g>
-  <g id="F" class="cls-4">
-    <circle class="cls-9" cx="744.28874" cy="755.35723" r="234.50119"/>
-  </g>
-  <g id="G" class="cls-4">
-    <circle class="cls-9" cx="1138.06287" cy="755.35723" r="234.50119"/>
-  </g>
-  <g id="H" class="cls-4">
-    <circle class="cls-9" cx="1531.837" cy="755.35723" r="234.50119"/>
-  </g>
-  <polygon id="ローホリ" data-name="ローホリ" class="cls-9" points="1832.997 395.38938 87 395.38938 100 457.1867 1818.997 457.1867 1832.997 395.38938"/>
-  <polygon id="アッパーホリ" data-name="アッパーホリ" class="cls-9" points="1919.99984 0 0 0 14 61.79732 1905.99984 61.79732 1919.99984 0"/>
-  <path id="SS下手" class="cls-6" d="M1582.61052,1097.76006c166.71912-166.71912,166.71912-436.53309,0-603.25221L0,796.13396l1582.61052,301.6261Z"/>
-  <path id="SS上手" class="cls-6" d="M331.52006,494.50786c-166.71912,166.71912-166.71912,436.53309,0,603.25221l1582.61052-301.6261L331.52006,494.50786Z"/>
-  <ellipse id="地明かりアンバー" data-name="地明かりアンバー" class="cls-1" cx="960" cy="832.1171" rx="811.54173" ry="345.36595"/>
-  <ellipse id="地明かり青緑" data-name="地明かり青緑" class="cls-3" cx="960" cy="832.1171" rx="811.54173" ry="345.36595"/>
-  <ellipse id="地明かり黄" data-name="地明かり黄" class="cls-5" cx="960" cy="832.1171" rx="811.54173" ry="345.36595"/>
-  <ellipse id="地明かり青紫" data-name="地明かり青紫" class="cls-2" cx="960" cy="832.1171" rx="811.54173" ry="345.36595"/>
+  <g id="FS下手"><path class="cls-8" d="M1975.47282,1523.22861C1732.76096,735.99749,899.3442,295.37943,112.11308,538.0913L-55.4725,3109.88933l2030.94532-1586.66072Z"/></g>
+  <g id="GS下手"><path class="cls-8" d="M1975.47282,1153.24475C1732.76096,366.01363,899.3442-74.60442,112.11308,168.10744L-55.4725,2739.90547l2030.94532-1586.66072Z"/></g>
+  <g id="FS上手"><path class="cls-8" d="M-42.39351,1523.22861C200.31835,735.99749,1033.73511,295.37943,1820.96623,538.0913l167.58558,2571.79803L-42.39351,1523.22861Z"/></g>
+  <g id="GS上手"><path class="cls-8" d="M-42.39351,1153.24475C200.31835,366.01363,1033.73511-74.60442,1820.96623,168.10744l167.58558,2571.79803L-42.39351,1153.24475Z"/></g>
+  <g id="サス下手" data-name="サス下手" class="cls-10"><circle class="cls-7" cx="365.89964" cy="1070.62406" r="160"/></g>
+  <g id="サス中央" data-name="サス中央" class="cls-10"><circle class="cls-7" cx="960" cy="1070.62406" r="160"/></g>
+  <g id="サス上手" data-name="サス上手" class="cls-10"><circle class="cls-7" cx="1554.10036" cy="1070.62406" r="160"/></g>
+  <g id="A" class="cls-4"><circle class="cls-9" cx="388.163" cy="923.25424" r="260"/></g>
+  <g id="B" class="cls-4"><circle class="cls-9" cx="738.57796" cy="923.25424" r="260"/></g>
+  <g id="C" class="cls-4"><circle class="cls-9" cx="1132.35209" cy="923.25424" r="260"/></g>
+  <g id="D" class="cls-4"><circle class="cls-9" cx="1526.12622" cy="923.25424" r="260"/></g>
+  <g id="E" class="cls-4"><circle class="cls-9" cx="393.87378" cy="755.35723" r="260"/></g>
+  <g id="F" class="cls-4"><circle class="cls-9" cx="744.28874" cy="755.35723" r="260"/></g>
+  <g id="G" class="cls-4"><circle class="cls-9" cx="1138.06287" cy="755.35723" r="260"/></g>
+  <g id="H" class="cls-4"><circle class="cls-9" cx="1531.837" cy="755.35723" r="260"/></g>
+  <g id="ローホリ" clip-path="url(#horizontClip)"><polygon data-name="ローホリ" class="cls-9" points="1920 228 0 228 0 457.1867 1920 457.1867"/></g>
+  <g id="アッパーホリ" clip-path="url(#horizontClip)"><polygon data-name="アッパーホリ" class="cls-9" points="1919.99984 0 0 0 14 300 1905.99984 300 1919.99984 0"/></g>
+  <g id="SS下手"><path class="cls-6" d="M1582.61052,1097.76006c166.71912-166.71912,166.71912-436.53309,0-603.25221L0,796.13396l1582.61052,301.6261Z"/></g>
+  <g id="SS上手"><path class="cls-6" d="M331.52006,494.50786c-166.71912,166.71912-166.71912,436.53309,0,603.25221l1582.61052-301.6261L331.52006,494.50786Z"/></g>
+  <g id="地明かりアンバー"><ellipse data-name="地明かりアンバー" class="cls-1" cx="960" cy="832.1171" rx="811.54173" ry="345.36595"/></g>
+  <g id="地明かり青緑"><ellipse data-name="地明かり青緑" class="cls-3" cx="960" cy="832.1171" rx="811.54173" ry="345.36595"/></g>
+  <g id="地明かり黄"><ellipse data-name="地明かり黄" class="cls-5" cx="960" cy="832.1171" rx="811.54173" ry="345.36595"/></g>
+  <g id="地明かり青紫"><ellipse data-name="地明かり青紫" class="cls-2" cx="960" cy="832.1171" rx="811.54173" ry="345.36595"/></g>
 </svg>

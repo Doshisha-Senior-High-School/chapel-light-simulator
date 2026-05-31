@@ -5,398 +5,415 @@ import LightPreview from './LightPreview';
 import FaderBank from './FaderBank';
 import CrossFader from './CrossFader';
 
-// PWA用の型定義
-interface BeforeInstallPromptEvent extends Event {
-  prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
-declare global {
-  interface Window {
-    deferredPrompt?: BeforeInstallPromptEvent;
-  }
-  interface Navigator {
-    standalone?: boolean;
-  }
-}
-
 const LIGHT_DEFINITIONS = [
-    'FS下手', 'FS上手', 'GS下手', 'GS上手', 'エリアA', 'エリアB', 'エリアC', 'エリアD', 'エリアE', 'エリアF', 'エリアG', 'エリアH',
-    'アンバー', '青緑', '黄', '青紫', '→アッパー', '青', '緑', '赤', '→ロアー', '青', '緑', '赤',
-    'サス下手', 'サス中央', 'サス上手', '', 'SS下手', 'SS上手', '', 'キャット間接', '1階側面スポ', '2階スポット', '1階座席天井', 'ステージ天井'
+  'FS下手', 'FS上手', 'GS下手', 'GS上手', 'エリアA', 'エリアB', 'エリアC', 'エリアD', 'エリアE', 'エリアF', 'エリアG', 'エリアH',
+  'アンバー', '青緑', '黄', '青紫', '→アッパー', '青', '緑', '赤', '→ロアー', '青', '緑', '赤',
+  'サス下手', 'サス中央', 'サス上手', '', 'SS下手', 'SS上手', '', 'キャット間接', '1階側面スポ', '2階スポット', '1階座席天井', 'ステージ天井'
 ];
 
 export default function LightingConsole() {
-    const [aFaderValues, setAFaderValues] = useState<number[]>(new Array(36).fill(0));
-    const [bFaderValues, setBFaderValues] = useState<number[]>(new Array(36).fill(0));
-    const [aFlashStates, setAFlashStates] = useState<boolean[]>(new Array(36).fill(false));
-    const [bFlashStates, setBFlashStates] = useState<boolean[]>(new Array(36).fill(false));
-  const [crossFaderValue, setCrossFaderValue] = useState(0); // デフォルトA-100% (0=A系統100%)
-  const [isTabletMode, setIsTabletMode] = useState(false);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [showPWAWarning, setShowPWAWarning] = useState(false);
-  const [showOrientationWarning, setShowOrientationWarning] = useState(false);    useEffect(() => {
-    // Hydration完了フラグを設定
-    setIsHydrated(true);
-    
-    // PWAインストールプロンプトを保存
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      window.deferredPrompt = e as BeforeInstallPromptEvent;
+  const [aFaderValues, setAFaderValues] = useState<number[]>(new Array(36).fill(0));
+  const [bFaderValues, setBFaderValues] = useState<number[]>(new Array(36).fill(0));
+  const [aFlashStates, setAFlashStates] = useState<boolean[]>(new Array(36).fill(false));
+  const [bFlashStates, setBFlashStates] = useState<boolean[]>(new Array(36).fill(false));
+  const [crossFaderValue, setCrossFaderValue] = useState(0); // 0 = A系統100%, 100 = B系統100%
+
+  // デバイス・レイアウト状態
+  const [deviceType, setDeviceType] = useState<'smartphone' | 'ipad' | 'allowed'>('allowed');
+  const [isLandscape, setIsLandscape] = useState(true);
+  const [bypassAppRedirect, setBypassAppRedirect] = useState(false);
+
+  // モーダル表示状態
+  const [showAbout, setShowAbout] = useState(false);
+  const [showResetConfirmation, setShowResetConfirmation] = useState(false);
+  const [showOrientationWarning, setShowOrientationWarning] = useState(true);
+
+  // デバイスおよび画面の向きの判定
+  useEffect(() => {
+    const bypassed = sessionStorage.getItem('bypass_app_redirect') === 'true';
+    setBypassAppRedirect(bypassed);
+
+    const checkDevice = () => {
+      const ua = navigator.userAgent;
+
+      // iPad 判定（iPadOSのSafariデスクトップ表示モードも考慮）
+      const isIPad = /iPad/.test(ua) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /Macintosh/.test(ua));
+
+      // スマートフォン判定（iPhone, iPod, Android Mobile）
+      const isSmartphone = /iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+        (/Android/i.test(ua) && /Mobile/i.test(ua));
+
+      if (isSmartphone) {
+        setDeviceType('smartphone');
+      } else if (isIPad) {
+        setDeviceType('ipad');
+        // iPadの場合は、未バイパスなら自動リダイレクトをタイマーで起動
+        if (!bypassed) {
+          const redirectTimer = setTimeout(() => {
+            window.location.href = 'https://go.hunny.co.jp/dhs/light-iOS';
+          }, 1500);
+          return () => clearTimeout(redirectTimer);
+        }
+      } else {
+        setDeviceType('allowed');
+      }
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);    const checkDeviceType = () => {
-      const userAgent = navigator.userAgent;
-      const isTablet = /iPad|Android|Tablet/.test(userAgent) || 
-                      (window.innerWidth >= 768 && window.innerHeight >= 1024);
-      setIsTabletMode(isTablet);
+    const handleResize = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
     };
 
-    const checkWarnings = () => {
-      // PWAチェック
-      const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                   (window.navigator as Navigator).standalone === true;
-      setShowPWAWarning(!isPWA);
+    checkDevice();
+    handleResize();
 
-      // デバイスチェック（iPadチェックは削除）
-      // setShowDeviceWarning(false); // 常に非表示
-
-      // 画面向きチェック
-      const isPortrait = window.innerHeight > window.innerWidth;
-      setShowOrientationWarning(!isPortrait);
-    };
-
-    checkDeviceType();
-    checkWarnings();
-    
-    window.addEventListener('resize', checkDeviceType);
-    window.addEventListener('orientationchange', () => {
-      setTimeout(() => {
-        checkDeviceType();
-        checkWarnings();
-      }, 100);
-    });
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
 
     return () => {
-      window.removeEventListener('resize', checkDeviceType);
-      window.removeEventListener('orientationchange', checkDeviceType);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
     };
   }, []);
 
-    // A系統とB系統の値をクロスフェーダーで合成（クロスフェーダー表示: 上A / 下B）
-    const getCombinedFaderValues = () => {
-        const combined: number[] = new Array(36).fill(0);
-        // クロスフェーダー比率（通常時）
-        const aRatio = (100 - crossFaderValue) / 100;
-        const bRatio = crossFaderValue / 100;
-
-        for (let i = 0; i < 36; i++) {
-            // どちらかがフラッシュ中ならクロスフェーダー位置に関係なく 100% (HTP 的優先)
-            if (aFlashStates[i] || bFlashStates[i]) {
-                combined[i] = 100;
-                continue;
-            }
-            const aLevel = aFaderValues[i] * aRatio;
-            const bLevel = bFaderValues[i] * bRatio;
-            combined[i] = Math.min(100, aLevel + bLevel);
-        }
-        return combined;
+  // ページ全体のスクロール・ズーム防止（操作性をネイティブアプリに近づける）
+  useEffect(() => {
+    const preventDefault = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.closest('button') ||
+        target?.closest('a') ||
+        target?.closest('.fader-touch-area') ||
+        target?.closest('.crossfader-track')
+      ) {
+        return;
+      }
+      e.preventDefault();
     };
 
-    const updateAFader = (index: number, value: number) => {
-        const newValues = [...aFaderValues];
-        newValues[index] = value;
-        setAFaderValues(newValues);
+    document.addEventListener('touchmove', preventDefault, { passive: false });
+    document.addEventListener('wheel', preventDefault, { passive: false });
+
+    const preventZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
     };
+    document.addEventListener('touchstart', preventZoom, { passive: false });
 
-    const updateBFader = (index: number, value: number) => {
-        const newValues = [...bFaderValues];
-        newValues[index] = value;
-        setBFaderValues(newValues);
+    return () => {
+      document.removeEventListener('touchmove', preventDefault);
+      document.removeEventListener('wheel', preventDefault);
+      document.removeEventListener('touchstart', preventZoom);
     };
+  }, []);
 
-    const handleAFlash = (index: number, isFlashing: boolean) => {
-        const newFlashStates = [...aFlashStates];
-        newFlashStates[index] = isFlashing;
-        setAFlashStates(newFlashStates);
-    };
+  // A系統とB系統の値をクロスフェーダーで合成（HTP/フラッシュ優先）
+  const getCombinedFaderValues = () => {
+    const combined: number[] = new Array(36).fill(0);
+    const aRatio = (100 - crossFaderValue) / 100;
+    const bRatio = crossFaderValue / 100;
 
-    const handleBFlash = (index: number, isFlashing: boolean) => {
-        const newFlashStates = [...bFlashStates];
-        newFlashStates[index] = isFlashing;
-        setBFlashStates(newFlashStates);
-    };
+    for (let i = 0; i < 36; i++) {
+      if (aFlashStates[i] || bFlashStates[i]) {
+        combined[i] = 100;
+        continue;
+      }
+      const aLevel = aFaderValues[i] * aRatio;
+      const bLevel = bFaderValues[i] * bRatio;
+      combined[i] = Math.min(100, aLevel + bLevel);
+    }
+    return combined;
+  };
 
-    // ページレベルの縦スクロール防止と拡大禁止
-    useEffect(() => {
-        const preventVerticalScroll = (e: WheelEvent) => {
-            // フェーダーエリア外での縦スクロールを防止
-            const target = e.target as Element;
-            if (!target.closest('.fader-bank-scroll')) {
-                if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                    e.preventDefault();
-                }
-            }
-        };
+  const updateAFader = (index: number, value: number) => {
+    const newValues = [...aFaderValues];
+    newValues[index] = value;
+    setAFaderValues(newValues);
+  };
 
-        const preventTouchScroll = (e: TouchEvent) => {
-            // フェーダーバンクエリア内でのタッチスクロールは許可
-            const target = e.target as Element;
-            if (target.closest('.fader-bank-scroll') || target.closest('.fader-container')) {
-                return; // スクロールとフェーダー操作を許可
-            }
-            // その他のエリアでは縦スクロールを防止
-            e.preventDefault();
-        };
+  const updateBFader = (index: number, value: number) => {
+    const newValues = [...bFaderValues];
+    newValues[index] = value;
+    setBFaderValues(newValues);
+  };
 
-        // 拡大防止のためのタッチイベント制御
-        const preventZoom = (e: TouchEvent) => {
-            // 2本指以上のタッチ（ピンチジェスチャー）を防止
-            if (e.touches.length > 1) {
-                e.preventDefault();
-                return;
-            }
+  const handleAFlash = (index: number, isFlashing: boolean) => {
+    const newFlashStates = [...aFlashStates];
+    newFlashStates[index] = isFlashing;
+    setAFlashStates(newFlashStates);
+  };
 
-            // フェーダーエリア内では1本指タッチを許可
-            const target = e.target as Element;
-            if (target.closest('.fader-bank-scroll') || target.closest('.fader-container') || target.closest('.crossfader-container')) {
-                return; // フェーダー操作とスクロールを許可
-            }
+  const handleBFlash = (index: number, isFlashing: boolean) => {
+    const newFlashStates = [...bFlashStates];
+    newFlashStates[index] = isFlashing;
+    setBFlashStates(newFlashStates);
+  };
 
-            // その他の場所では基本的にタッチを制限
-            e.preventDefault();
-        };
+  const resetAllFaders = () => {
+    setAFaderValues(new Array(36).fill(0));
+    setBFaderValues(new Array(36).fill(0));
+    setAFlashStates(new Array(36).fill(false));
+    setBFlashStates(new Array(36).fill(false));
+    setCrossFaderValue(0);
+    setShowResetConfirmation(false);
+  };
 
-        const preventTouchStart = (e: TouchEvent) => {
-            // 2本指以上のタッチを防止（ピンチズーム防止）
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        };
-
-        document.addEventListener('wheel', preventVerticalScroll, { passive: false });
-        document.addEventListener('touchmove', preventTouchScroll, { passive: false });
-        document.addEventListener('touchstart', preventTouchStart, { passive: false });
-        document.addEventListener('touchmove', preventZoom, { passive: false });
-
-        // タブレット用の追加処理 - hydration後にのみ実行
-        if (isHydrated && isTabletMode) {
-            // タブレットでのスクロール改善
-            const faderScrollArea = document.querySelector('.fader-bank-scroll');
-            if (faderScrollArea) {
-                // タッチスクロールを確実に有効化
-                faderScrollArea.addEventListener('touchstart', (e) => {
-                    e.stopPropagation();
-                }, { passive: true });
-
-                faderScrollArea.addEventListener('touchmove', (e) => {
-                    e.stopPropagation();
-                }, { passive: true });
-            }
-        }
-
-        return () => {
-            document.removeEventListener('wheel', preventVerticalScroll);
-            document.removeEventListener('touchmove', preventTouchScroll);
-            document.removeEventListener('touchstart', preventTouchStart);
-            document.removeEventListener('touchmove', preventZoom);
-        };
-    }, [isHydrated, isTabletMode]);
-
-    // 警告モーダルコンポーネント
-    const WarningModal = ({ show, title, message, onClose, showInstallButton }: {
-        show: boolean;
-        title: string;
-        message: string;
-        onClose: () => void;
-        showInstallButton?: boolean;
-    }) => {
-        if (!show) return null;
-        
-        const handleInstall = () => {
-            // PWAインストールプロンプトが利用可能な場合のみ
-            const deferredPrompt = window.deferredPrompt;
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(() => {
-                    window.deferredPrompt = undefined;
-                    onClose();
-                });
-            } else {
-                // 手動インストール案内
-                alert('ブラウザのメニューから「アプリをインストール」または「ホーム画面に追加」を選択してください。');
-            }
-        };
-        
-        return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white p-6 rounded-lg max-w-md mx-4">
-                    <h2 className="text-xl font-bold mb-4 text-gray-800">{title}</h2>
-                    <p className="text-gray-600 mb-6">{message}</p>
-                    <div className="flex justify-end space-x-3">
-                        <button
-                            onClick={onClose}
-                            className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-                        >
-                            無視
-                        </button>
-                        {showInstallButton && (
-                            <button
-                                onClick={handleInstall}
-                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                            >
-                                対応する
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
+  // --- スマートフォン表示制限ゲート ---
+  if (deviceType === 'smartphone') {
     return (
-        <div className="h-screen flex flex-col bg-white text-gray-900 overflow-hidden">
-            {/* ヘッダー */}
-            <header className="bg-gray-100 border-b border-gray-300 p-3 flex-shrink-0">
-                <div className="flex items-center justify-center w-full">
-                    <h1 className="text-lg font-bold text-gray-800 text-center">
-                        同志社高等学校 チャペル照明シミュレーター
-                    </h1>
-                </div>
-            </header>
-
-            {/* プレビュー */}
-            <div
-                className="bg-gray-900 p-2 border-b border-gray-300 flex-shrink-0"
-                style={{
-                    height: '25vh',
-                    pointerEvents: 'none',
-                    userSelect: 'none',
-                    zIndex: 1
-                }}
-            >
-                <LightPreview faderValues={getCombinedFaderValues()} />
-            </div>
-
-            {/* メインエリア（統合A/B系統、クロスフェーダー） */}
-            <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* 左側：統合A/B系統フェーダー */}
-        <div className="w-full" style={{ width: 'calc(100vw - 60px)' }}>
-          {/* 共通スクロールコンテナ */}
-          <div 
-            className="h-full overflow-x-auto overflow-y-hidden fader-bank-scroll"
-            onWheel={(e) => {
-              // 縦方向のホイールスクロールを横方向に変換
-              if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                e.preventDefault();
-                e.currentTarget.scrollLeft += e.deltaY;
-              }
-            }}
-            style={{ 
-              touchAction: 'pan-x pinch-zoom',
-              overscrollBehavior: 'none',
-              width: '100%',
-              maxWidth: '100%',
-              WebkitOverflowScrolling: 'touch', // iOS用の滑らかなスクロール
-              minHeight: 0
-            }}
-          >
-            {/* 内容全体コンテナ */}
-            <div 
-              className="h-full flex flex-col" 
-              style={{ 
-                width: isHydrated ? `${(() => {
-                  const faderWidth = isTabletMode ? 56 : 48;
-                  const gapWidth = 16;
-                  const totalGaps = 2;
-                  const baseWidth = 36 * faderWidth;
-                  const gapTotalWidth = totalGaps * gapWidth;
-                  return baseWidth + gapTotalWidth + 32; // 40pxのラベル幅を削除
-                })()}px` : '2000px' // SSR用のフォールバック幅
-              }}
-            >
-              {/* B系統（上段） */}
-              <div className="flex-1 flex">
-                {/* B系統ラベル（左側固定） */}
-                <div className="bg-gray-200 p-2 flex items-center justify-center border-r border-gray-400 flex-shrink-0 sticky left-0 z-20" style={{ width: '40px' }}>
-                  <div className={`font-bold text-gray-800 ${isTabletMode ? 'text-lg' : 'text-base'}`} style={{ writingMode: 'vertical-rl' }}>
-                    Ｂ
-                  </div>
-                </div>                                {/* B系統フェーダーエリア */}
-                                <div className="flex-1">
-                                    <FaderBank
-                                        startIndex={0}
-                                        endIndex={35}
-                                        faderValues={bFaderValues}
-                                        lightDefinitions={LIGHT_DEFINITIONS}
-                                        onFaderChange={updateBFader}
-                                        isTabletMode={isHydrated ? isTabletMode : false}
-                                        bankType="B"
-                                        onFlashChange={handleBFlash}
-                                    />
-                                </div>
-                            </div>
-
-              {/* A系統（下段） */}
-              <div className="flex-1 flex border-t border-gray-400">
-                {/* A系統ラベル（左側固定） */}
-                <div className="bg-gray-200 p-2 flex items-center justify-center border-r border-gray-400 flex-shrink-0 sticky left-0 z-20" style={{ width: '40px' }}>
-                  <div className={`font-bold text-gray-800 ${isTabletMode ? 'text-lg' : 'text-base'}`} style={{ writingMode: 'vertical-rl' }}>
-                    Ａ
-                  </div>
-                </div>                                {/* A系統フェーダーエリア */}
-                                <div className="flex-1">
-                                    <FaderBank
-                                        startIndex={0}
-                                        endIndex={35}
-                                        faderValues={aFaderValues}
-                                        lightDefinitions={LIGHT_DEFINITIONS}
-                                        onFaderChange={updateAFader}
-                                        isTabletMode={isHydrated ? isTabletMode : false}
-                                        bankType="A"
-                                        onFlashChange={handleAFlash}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>        {/* 右側：縦型クロスフェーダー（固定） */}
-                <div className="bg-gray-200 border-l border-gray-400 flex-shrink-0 p-1 flex flex-col justify-center" style={{ width: '60px', zIndex: 10, position: 'sticky', right: 0 }}>
-                    <div style={{ height: '50%' }}>
-                        <CrossFader
-                            value={crossFaderValue}
-                            onChange={setCrossFaderValue}
-                            isTabletMode={isHydrated ? isTabletMode : false}
-                            isVertical={true}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* フッター */}
-            <div className="bg-gray-100 border-t border-gray-300 p-1 flex-shrink-0">
-                <div className="flex items-center justify-center w-full">
-                    <p className="text-xs text-gray-600">
-                        ©︎ 2025 Kanata Tsuda. All Rights Reserved.
-                    </p>
-                </div>
-            </div>
-
-            {/* 警告モーダル */}
-            <WarningModal
-                show={showPWAWarning}
-                title="ホーム画面に追加してください"
-                message="共有マーク↑から「ホーム画面に追加」を選択してください。"
-                onClose={() => setShowPWAWarning(false)}
-                showInstallButton={true}
-            />
-            <WarningModal
-                show={showOrientationWarning}
-                title="縦向きで使用してください"
-                message="このアプリは縦向きでの利用を想定しています。デバイスを縦向きにしてください。"
-                onClose={() => setShowOrientationWarning(false)}
-            />
+      <div className="fixed inset-0 bg-gray-950 text-white flex flex-col items-center justify-center p-6 z-50 text-center select-none">
+        <div className="max-w-md bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl flex flex-col items-center">
+          <div className="w-16 h-16 bg-red-600/20 text-red-500 rounded-full flex items-center justify-center mb-6">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold mb-4">スマートフォン非対応</h1>
+          <p className="text-gray-400 text-sm leading-relaxed mb-6">
+            このチャペル照明シミュレーターは、タブレットまたはPCなどの大画面の横向きデバイス向けに最適化されています。
+          </p>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            より大きな画面を持つデバイス（iPad、Androidタブレット、パソコンなど）から横画面でアクセスしてください。
+          </p>
         </div>
+      </div>
     );
+  }
+
+  // --- iPad専用アプリ誘導・自動リダイレクト ---
+  if (deviceType === 'ipad' && !bypassAppRedirect) {
+    return (
+      <div className="fixed inset-0 bg-gray-950 text-white flex flex-col items-center justify-center p-6 z-50 text-center select-none">
+        <div className="max-w-md w-full bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl flex flex-col items-center">
+          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-6 animate-pulse">
+            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold mb-4">iPad専用アプリを起動しています</h1>
+          <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+            App Storeへ自動的にリダイレクトします。<br />
+            自動的に移動しない場合は、App Storeを確認してください。
+          </p>
+          <div className="text-xs text-gray-500 bg-gray-950 p-4 rounded-lg border border-gray-800 mb-8 w-full leading-relaxed">
+            ※学校等の制限デバイスでアプリをダウンロードできない場合は、以下のボタンからWeb版をそのままご利用いただけます。
+          </div>
+          <button
+            onClick={() => {
+              sessionStorage.setItem('bypass_app_redirect', 'true');
+              setBypassAppRedirect(true);
+            }}
+            className="w-full py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl font-semibold transition-all text-sm active:scale-95"
+          >
+            Web版を使用する
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen w-screen flex flex-col bg-white text-gray-900 overflow-hidden select-none">
+      {/* ヘッダー */}
+      <header className="bg-gray-100 border-b border-gray-300 p-2 flex-shrink-0 flex items-center justify-between select-none h-11">
+        <button
+          onClick={() => setShowResetConfirmation(true)}
+          className="px-3 py-1 border border-red-500 text-red-650 hover:bg-red-50 text-[11px] font-semibold rounded transition-colors active:scale-95 cursor-pointer"
+        >
+          リセット
+        </button>
+
+        <h1 className="text-xs sm:text-sm font-bold text-gray-800 truncate px-2 text-center flex-1">
+          同志社高等学校 チャペル舞台照明シミュレーター
+        </h1>
+
+        <button
+          onClick={() => setShowAbout(true)}
+          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold rounded transition-colors active:scale-95 cursor-pointer"
+        >
+          アプリについて
+        </button>
+      </header>
+
+      {/* プレビューエリア (30vh固定) */}
+      <div className="bg-black border-b border-gray-300 flex-shrink-0 overflow-hidden h-[30vh]">
+        <LightPreview faderValues={getCombinedFaderValues()} />
+      </div>
+
+      {/* メインエリア（B系統、A系統、クロスフェーダー） */}
+      <div className="flex flex-1 min-h-0 w-full overflow-hidden select-none bg-gray-200">
+
+        {/* 左側：B系統とA系統のフェーダーバンク */}
+        <div className="flex-1 flex flex-col h-full min-w-0">
+
+          {/* B系統（上段） */}
+          <div className="flex-1 min-h-0 flex items-stretch">
+            {/* B系統ラベル */}
+            <div className="bg-gray-300 px-2 flex items-center justify-center border-r border-gray-400 flex-shrink-0" style={{ width: '28px' }}>
+              <div className="font-bold text-gray-800 text-xs leading-none" style={{ writingMode: 'vertical-rl' }}>
+                Ｂ
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <FaderBank
+                startIndex={0}
+                endIndex={29}
+                faderValues={bFaderValues}
+                lightDefinitions={LIGHT_DEFINITIONS}
+                onFaderChange={updateBFader}
+                bankType="B"
+                onFlashChange={handleBFlash}
+              />
+            </div>
+          </div>
+
+          {/* A系統（下段） */}
+          <div className="flex-1 min-h-0 flex items-stretch border-t border-gray-400">
+            {/* A系統ラベル */}
+            <div className="bg-gray-300 px-2 flex items-center justify-center border-r border-gray-400 flex-shrink-0" style={{ width: '28px' }}>
+              <div className="font-bold text-gray-800 text-xs leading-none" style={{ writingMode: 'vertical-rl' }}>
+                Ａ
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <FaderBank
+                startIndex={0}
+                endIndex={29}
+                faderValues={aFaderValues}
+                lightDefinitions={LIGHT_DEFINITIONS}
+                onFaderChange={updateAFader}
+                bankType="A"
+                onFlashChange={handleAFlash}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 右側：縦型クロスフェーダー（全体をカバー） */}
+        <div className="bg-gray-300 border-l border-gray-400 flex-shrink-0 p-1 flex flex-col justify-stretch items-center select-none w-14">
+          <CrossFader
+            value={crossFaderValue}
+            onChange={setCrossFaderValue}
+            isVertical={true}
+          />
+        </div>
+      </div>
+
+      {/* --- 横向きの推奨警告モーダル --- */}
+      {!isLandscape && showOrientationWarning && (
+        <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-40 p-4">
+          <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-sm w-full text-center text-white shadow-2xl">
+            <h2 className="text-base font-bold mb-2">横向きで使用してください</h2>
+            <p className="text-gray-450 text-xs leading-relaxed mb-5">
+              このシミュレーターは横画面での操作に最適化されています。すべてのフェーダーを1画面に収めるため、デバイスを横向きに回転してください。
+            </p>
+            <button
+              onClick={() => setShowOrientationWarning(false)}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs font-semibold active:scale-95 cursor-pointer"
+            >
+              閉じる（そのまま使う）
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- リセット確認ダイアログ --- */}
+      {showResetConfirmation && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 select-none">
+          <div className="bg-white border border-gray-300 p-6 rounded-2xl max-w-sm w-full text-gray-800 shadow-2xl">
+            <h3 className="text-base font-bold mb-2">フェーダーのリセット</h3>
+            <p className="text-gray-500 text-xs mb-6">
+              すべての系統のフェーダー値を0にリセットします。よろしいですか？
+            </p>
+            <div className="flex justify-end gap-3 text-xs">
+              <button
+                onClick={() => setShowResetConfirmation(false)}
+                className="px-4 py-2 border border-gray-300 hover:bg-gray-100 rounded-lg font-semibold text-gray-700 active:scale-95 cursor-pointer"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={resetAllFaders}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold active:scale-95 cursor-pointer"
+              >
+                リセット
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- アプリについてダイアログ --- */}
+      {showAbout && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 select-none animate-fadeIn">
+          <div className="bg-white border border-gray-300 p-6 rounded-2xl max-w-lg w-full max-h-[85vh] overflow-hidden shadow-2xl flex flex-col text-gray-800">
+            <div className="flex items-center justify-between border-b pb-3 mb-4 flex-shrink-0">
+              <h3 className="text-base font-bold">アプリについて</h3>
+              <button
+                onClick={() => setShowAbout(false)}
+                className="text-gray-500 hover:text-gray-850 text-xl font-bold w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto text-xs space-y-4 pr-1 leading-relaxed">
+              <p>
+                このアプリは、同志社高等学校のチャペル特設舞台の照明卓の機能を再現したシミュレーターです。
+                2025年度の2年生パート有志で制作したものです。
+              </p>
+
+              <div className="space-y-2">
+                <div className="font-bold">【省略されているチャンネルについて】</div>
+                <p>
+                  右端の下段 31チャンネル〜36チャンネル、上段 67チャンネル〜72チャンネルはアプリでの表示を省略しています。
+                </p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-semibold pl-1">
+                  <div>・31ch / 67ch: 空き</div>
+                  <div>・32ch / 68ch: キャット間接</div>
+                  <div>・33ch / 69ch: 1階側面スポ</div>
+                  <div>・34ch / 70ch: 2階スポット</div>
+                  <div>・35ch / 71ch: 1階座席天井</div>
+                  <div>・36ch / 72ch: ステージ天井</div>
+                </div>
+                <p className="text-[10px] opacity-80 leading-tight">
+                  ※これらは照明卓下部の客電フェーダーで一括操作できるため、演劇の演出で使用する場合を除き、個別に操作する機会はほとんどありません。
+                </p>
+              </div>
+
+              <div className="border-t pt-3 space-y-3">
+                <h4 className="font-bold">関連リンク</h4>
+                <div className="space-y-2 font-semibold">
+                  <div>
+                    <span className="text-gray-500 block text-[10px] font-normal">動画での解説(音響照明パート)</span>
+                    <a href="https://go.hunny.co.jp/dhs/light-yt" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      https://go.hunny.co.jp/dhs/light-yt
+                    </a>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block text-[10px] font-normal">お問い合わせ・ご要望</span>
+                    <a href="https://hunny.co.jp/contact" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      https://hunny.co.jp/contact
+                    </a>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block text-[10px] font-normal">iPad専用アプリ（App Store）</span>
+                    <a href="https://go.hunny.co.jp/dhs/light-iOS" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+                      https://go.hunny.co.jp/dhs/light-iOS
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-3 mt-4 text-center text-[10px] text-gray-500 flex-shrink-0">
+              &copy; 2025-2026 Kanata Tsuda. All Rights Reserved.
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

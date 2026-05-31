@@ -11,9 +11,9 @@ interface FaderBankProps {
   isTabletMode?: boolean;
   scrollLeft?: number;
   onScrollChange?: (scrollLeft: number) => void;
-  bankType?: 'A' | 'B'; // フェーダーバンクの種類
-  flashStates?: boolean[]; // フラッシュ状態
-  onFlashChange?: (index: number, isFlashing: boolean) => void; // フラッシュ状態変更
+  bankType?: 'A' | 'B';
+  flashStates?: boolean[];
+  onFlashChange?: (index: number, isFlashing: boolean) => void;
 }
 
 export default function FaderBank({ 
@@ -30,7 +30,7 @@ export default function FaderBank({
   // 最大ラベル文字数を計算
   const maxLabelLength = Math.max(
     ...lightDefinitions.slice(startIndex, endIndex + 1).map(label => label.length),
-    1 // 最低1文字
+    1
   );
 
   const faders = [];
@@ -40,7 +40,10 @@ export default function FaderBank({
     const needsGap = i === 12 || i === 24;
     
     faders.push(
-      <div key={i} className={`flex-shrink-0 ${needsGap ? 'ml-4' : ''}`}>
+      <div 
+        key={i} 
+        className={`flex-1 min-w-0 h-full ${needsGap ? 'ml-1.5 sm:ml-2.5' : ''}`}
+      >
         <Fader
           index={i}
           value={faderValues[i]}
@@ -55,29 +58,9 @@ export default function FaderBank({
     );
   }
 
-  // 動的幅計算（フェーダー幅 + ギャップ + マージンを含む）
-  const faderWidth = isTabletMode ? 56 : 48; // フェーダー1個の幅
-  const gapWidth = 16; // ml-4のマージン（1rem = 16px）
-  const totalGaps = 2; // 12-13間と24-25間
-  const baseWidth = (endIndex - startIndex + 1) * faderWidth;
-  const gapTotalWidth = totalGaps * gapWidth;
-  const totalWidth = baseWidth + gapTotalWidth + 32; // 余裕をもたせる
-
   return (
-    <div 
-      className="h-full p-1"
-      style={{ 
-        width: '100%',
-        maxWidth: '100%'
-      }}
-    >
-      <div
-        data-fader-inner
-        className={`flex gap-1 whitespace-nowrap h-full`}
-        style={{
-          width: `${totalWidth}px`, // 動的計算された幅
-        }}
-      >
+    <div className="w-full h-full p-0.5 overflow-hidden select-none">
+      <div className="flex gap-[2px] w-full h-full select-none">
         {faders}
       </div>
     </div>

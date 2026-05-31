@@ -1,25 +1,26 @@
 "use client";
 
 import { useRef } from 'react';
-import Image from 'next/image';
 
 interface CrossFaderProps {
   value: number; // 0=A 100=B
   onChange: (value: number) => void;
-  isTabletMode?: boolean;
   isVertical?: boolean;
 }
 
-export default function CrossFader({ value, onChange, isTabletMode = false, isVertical = false }: CrossFaderProps) {
+export default function CrossFader({ value, onChange, isVertical = false }: CrossFaderProps) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const knobRef = useRef<HTMLDivElement | null>(null);
+
+  const knobW = 46; 
+  const knobH = 24; 
 
   const getGeometry = () => {
     const track = trackRef.current;
     const knob = knobRef.current;
     if (!track || !knob) return { usable: 0, knobLong: 0, trackLong: 0 };
     const trackRect = track.getBoundingClientRect();
-    const knobLong = isVertical ? knob.offsetHeight : knob.offsetWidth;
+    const knobLong = isVertical ? knobH : knobW;
     const trackLong = isVertical ? trackRect.height : trackRect.width;
     return { usable: trackLong - knobLong, knobLong, trackLong };
   };
@@ -73,20 +74,27 @@ export default function CrossFader({ value, onChange, isTabletMode = false, isVe
     document.addEventListener('touchend', end);
   };
 
-  const knobW = isTabletMode ? 60 : 54; // フェーダーより大きく
-  const knobH = isTabletMode ? 48 : 42; // フェーダーより大きく
   const { usable } = getGeometry();
-  const posPx = (usable * value) / 100; // 0..usable (中心位置基準)
+  const posPx = (usable * value) / 100;
 
   if (isVertical) {
     return (
-      <div className="h-full flex flex-col items-center justify-between crossfader-container">
-        <div className={`${isTabletMode ? 'text-sm' : 'text-xs'} text-gray-800 font-bold mb-2`}>A</div>
-        <div className="flex-1 relative mx-2 crossfader-track select-none w-4" ref={trackRef} style={{ minHeight: '100px' }}>
-          <div className="absolute inset-y-0 bg-gray-300 rounded-sm border border-gray-500" style={{ width: '4px', left: '50%', transform: 'translateX(-50%)' }}></div>
+      <div className="h-full flex flex-col items-center justify-between crossfader-container py-1 select-none">
+        <div className="text-[10px] text-gray-800 font-bold mb-1 select-none">A</div>
+        
+        {/* スライドレール */}
+        <div 
+          className="flex-1 relative mx-1 crossfader-track select-none w-4" 
+          ref={trackRef} 
+          style={{ minHeight: '100px', touchAction: 'none' }}
+        >
+          {/* レール背景スリット */}
+          <div className="absolute inset-y-0 bg-gray-300 rounded-sm border border-gray-400" style={{ width: '4px', left: '50%', transform: 'translateX(-50%)' }}></div>
+          
+          {/* CSSクロスフェーダーノブ（赤） */}
           <div
             ref={knobRef}
-            className="absolute z-20 cursor-grab active:cursor-grabbing transition-all duration-50 ease-linear"
+            className="absolute z-20 cursor-grab active:cursor-grabbing bg-red-600 border border-red-800 rounded shadow-md flex flex-col justify-center items-center"
             style={{
               top: `${posPx + knobH / 2}px`,
               left: '50%',
@@ -98,22 +106,24 @@ export default function CrossFader({ value, onChange, isTabletMode = false, isVe
             onMouseDown={startMouse}
             onTouchStart={startTouch}
           >
-            <Image src="/crossfader.svg" alt="CrossFader" width={knobW} height={knobH} className="w-full h-full object-contain pointer-events-none" />
+            {/* 白のセンターライン */}
+            <div className="w-full h-[2.5px] bg-white opacity-85 pointer-events-none"></div>
           </div>
         </div>
-        <div className={`${isTabletMode ? 'text-sm' : 'text-xs'} text-gray-800 font-bold mt-2`}>B</div>
+        
+        <div className="text-[10px] text-gray-800 font-bold mt-1 select-none">B</div>
       </div>
     );
   }
 
   return (
-    <div className={`bg-gray-100 rounded-lg p-3 border border-gray-300 ${isTabletMode ? 'h-20' : 'h-16'} flex items-center gap-4 crossfader-container`}>
-      <div className={`${isTabletMode ? 'text-sm' : 'text-xs'} text-gray-800 font-bold flex-shrink-0`}>A</div>
-      <div className="flex-1 relative crossfader-track select-none" ref={trackRef} style={{ minWidth: '160px' }}>
-        <div className="absolute inset-y-0 bg-gray-300 rounded-sm border border-gray-500" style={{ width: '100%', height: '4px', top: '50%', transform: 'translateY(-50%)' }}></div>
+    <div className="bg-gray-100 rounded-lg p-3 border border-gray-300 h-14 flex items-center gap-4 crossfader-container select-none">
+      <div className="text-xs text-gray-800 font-bold flex-shrink-0 select-none">A</div>
+      <div className="flex-1 relative crossfader-track select-none h-4" ref={trackRef} style={{ minWidth: '120px', touchAction: 'none' }}>
+        <div className="absolute inset-x-0 bg-gray-300 rounded-sm border border-gray-400" style={{ height: '4px', top: '50%', transform: 'translateY(-50%)' }}></div>
         <div
           ref={knobRef}
-            className="absolute z-20 cursor-grab active:cursor-grabbing transition-all duration-50 ease-linear"
+          className="absolute z-20 cursor-grab active:cursor-grabbing bg-red-600 border border-red-800 rounded shadow-md flex flex-col justify-center items-center"
           style={{
             left: `${posPx + knobW / 2}px`,
             top: '50%',
@@ -125,10 +135,10 @@ export default function CrossFader({ value, onChange, isTabletMode = false, isVe
           onMouseDown={startMouse}
           onTouchStart={startTouch}
         >
-          <Image src="/crossfader.svg" alt="CrossFader" width={knobW} height={knobH} className="w-full h-full object-contain pointer-events-none" />
+          <div className="w-[2.5px] h-full bg-white opacity-85 pointer-events-none"></div>
         </div>
       </div>
-      <div className={`${isTabletMode ? 'text-sm' : 'text-xs'} text-gray-800 font-bold flex-shrink-0`}>B</div>
+      <div className="text-xs text-gray-800 font-bold flex-shrink-0 select-none">B</div>
     </div>
   );
 }
