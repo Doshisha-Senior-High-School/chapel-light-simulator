@@ -35,7 +35,7 @@ export default function CrossFader({ value, onChange, isVertical = false }: Cros
     if (isVertical) {
       const pos = clientY - rect.top - knobLong / 2;
       const clamped = Math.max(0, Math.min(usable, pos));
-      return Math.round((clamped / usable) * 100);
+      return Math.round(100 - (clamped / usable) * 100);
     } else {
       const pos = clientX - rect.left - knobLong / 2;
       const clamped = Math.max(0, Math.min(usable, pos));
@@ -75,12 +75,12 @@ export default function CrossFader({ value, onChange, isVertical = false }: Cros
   };
 
   const { usable } = getGeometry();
-  const posPx = (usable * value) / 100;
+  const posPx = isVertical ? (usable * (100 - value)) / 100 : (usable * value) / 100;
 
   if (isVertical) {
     return (
       <div className="h-full flex flex-col items-center justify-between crossfader-container py-1 select-none">
-        <div className="text-[10px] text-gray-800 font-bold mb-1 select-none">A</div>
+        <div className="text-[10px] text-gray-800 font-bold mb-1 select-none">B</div>
         
         {/* スライドレール */}
         <div 
@@ -111,7 +111,7 @@ export default function CrossFader({ value, onChange, isVertical = false }: Cros
           </div>
         </div>
         
-        <div className="text-[10px] text-gray-800 font-bold mt-1 select-none">B</div>
+        <div className="text-[10px] text-gray-800 font-bold mt-1 select-none">A</div>
       </div>
     );
   }
